@@ -144,14 +144,20 @@
     }
 
     .header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       text-align: center;
+      width: 100%;
     }
 
     .logo {
       max-width: 150px;
       height: auto;
-      margin-bottom: 20px;
+      margin: 0 auto 20px auto;
       filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.4));
+      display: block;
     }
 
     .badge {
@@ -536,7 +542,7 @@
     /* Responsive */
     @media (max-width: 768px) {
       body {
-        overflow-y: hidden; /* 👈 en móvil todo entra en pantalla, sin scroll */
+        overflow-y: hidden; /* en móvil todo entra en pantalla, sin scroll */
       }
 
       .envelope-container {
@@ -627,13 +633,16 @@
     </div>
   </div>
 
-  <audio id="audio" src="assets/background-music.mp3" preload="auto" playsinline></audio>
+  <!-- 🎵 Audios -->
+  <audio id="bgAudio" src="assets/background-music.mp3" preload="auto" playsinline></audio>
+  <audio id="openSound" src="assets/open-letter.mp3" preload="auto" playsinline></audio>
+  <audio id="claimSound" src="assets/claim-prize.mp3" preload="auto" playsinline></audio>
 
   <script>
     // 🔑 Prefijo propio para Arkana
     const LS_PREFIX = 'arkanaCartaPapaNoel_';
 
-    // Escalado para que todo quepa en la pantalla (sobre todo en móviles)
+    // Escalado para que todo quepa en la pantalla
     function scaleLayout() {
       const wrapper = document.getElementById('layoutWrapper');
       if (!wrapper) return;
@@ -642,7 +651,7 @@
       wrapper.style.transform = 'scale(1)';
 
       const vh = window.innerHeight;
-      const available = vh - 20; // pequeño margen
+      const available = vh - 20; // margen
 
       const rect = wrapper.getBoundingClientRect();
       const needed = rect.height;
@@ -742,7 +751,10 @@
     const acceptBtn = document.getElementById('acceptBtn');
     const modal = document.getElementById('modal');
     const modalCloseBtn = document.getElementById('modalCloseBtn');
-    const audio = document.getElementById('audio');
+
+    const bgAudio = document.getElementById('bgAudio');
+    const openSound = document.getElementById('openSound');
+    const claimSound = document.getElementById('claimSound');
 
     let premio = '';
     let yaReclamo = false;
@@ -751,7 +763,9 @@
     setTimeout(() => {
       preloader.classList.add('hidden');
 
-      audio.play().catch(() => {
+      // Música de fondo
+      bgAudio.volume = 0.4;
+      bgAudio.play().catch(() => {
         console.log('Autoplay bloqueado');
       });
 
@@ -768,10 +782,15 @@
         }
 
         prizeText.textContent = premio;
+
+        // Sonido de carta abriéndose
+        openSound.currentTime = 0;
+        openSound.play().catch(() => {});
+
         envelope.classList.add('opening');
         createConfetti();
 
-        // Escalar después de que la carta se abre (dejamos terminar la animación)
+        // Escalar después de que la carta se abre
         setTimeout(scaleLayout, 1200);
       }, 1000);
     }, 2000);
@@ -784,8 +803,15 @@
       }
 
       guardarReclamo(premio);
+
+      // Pausar música de fondo y reproducir sonido de reclamo
+      bgAudio.pause();
+      claimSound.currentTime = 0;
+      claimSound.play().catch(() => {});
+
       modal.classList.add('active');
       createConfetti();
+
       yaReclamo = true;
       acceptBtn.textContent = 'Ya Reclamado Hoy';
       acceptBtn.style.opacity = '0.6';
@@ -793,13 +819,22 @@
     });
 
     // Cerrar modal
-    modalCloseBtn.addEventListener('click', () => {
+    function cerrarModal() {
       modal.classList.remove('active');
-    });
+
+      // Parar sonido de reclamo
+      claimSound.pause();
+      claimSound.currentTime = 0;
+
+      // Volver a la música de fondo
+      bgAudio.play().catch(() => {});
+    }
+
+    modalCloseBtn.addEventListener('click', cerrarModal);
 
     modal.addEventListener('click', (e) => {
       if (e.target === modal) {
-        modal.classList.remove('active');
+        cerrarModal();
       }
     });
 
